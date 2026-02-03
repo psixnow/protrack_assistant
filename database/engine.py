@@ -1,43 +1,39 @@
-import logging
+# Замените весь файл на этот код:
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
+from config.settings import settings
 import os
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
 
-logger = logging.getLogger(__name__)
+# Для SQLite нужно использовать aiosqlite
+if settings.DATABASE_URL.startswith("sqlite"):
+    # Для SQLite убираем +asyncpg и добавляем aiosqlite
+    db_url = settings.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
+else:
+    db_url = settings.DATABASE_URL
 
-# Создаем папку для данных
-os.makedirs("data", exist_ok=True)
-
-# URL для SQLite
-DATABASE_URL = "sqlite+aiosqlite:///data/bot.db"
-
-# Создаем асинхронный движок
 engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
+    db_url,
+    echo=True,  # Показывает SQL запросы в консоли
     future=True
+)
+
+AsyncSessionLocal = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
 )
 
 Base = declarative_base()
 
-# Создаем фабрику сессий
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
-
-async def create_db():
-    """Создание таблиц в базе данных"""
-    # Импортируем модели здесь, чтобы избежать циклических импортов
-    from database.models import User, Task, Habit, HabitCompletion, Transaction, Payment
-    
+async def create_database():
+    """Создает все таблицы в базе данных"""
+    from database.models import Base  # Импортируем здесь, чтобы избежать циклических импортов
     async with engine.begin() as conn:
-        # Просто создаем таблицы без сложных проверок
         await conn.run_sync(Base.metadata.create_all)
-    
-    logger.info("✅ База данных создана успешно")
+    print("✅ База данных создана успешно!")
 
-async def get_db():
-    """Получение сессии БД"""
+async def get_session() -> AsyncSession:
+    """Получаем сессию для работы с БД"""
     async with AsyncSessionLocal() as session:
         try:
             yield session
