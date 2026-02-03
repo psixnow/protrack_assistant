@@ -1,7 +1,7 @@
-from aiogram import Router, types
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
+
 from aiogram.enums import ParseMode
 
 from utils.keyboards import get_subscription_keyboard

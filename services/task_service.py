@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database.models import Task, User
